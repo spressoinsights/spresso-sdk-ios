@@ -1,0 +1,14 @@
+use_frameworks!
+
+platform :ios, '10.0'
+
+target 'spresso-sdk-ios_Example' do
+  pod 'spresso-sdk-ios', :path => '../'
+
+  target 'spresso-sdk-ios_Tests' do
+    inherit! :search_paths
+
+    pod 'Specta'
+    pod 'Expecta'
+  end
+end
