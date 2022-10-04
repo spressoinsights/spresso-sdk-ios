@@ -23,13 +23,13 @@
 
 
 #ifdef SPRESSO_LOG
-#define SpressoLog(...) GDLog(__VA_ARGS__)
+#define SpressoLog(...) NSLog(__VA_ARGS__)
 #else
 #define SpressoLog(...)
 #endif
 
 #ifdef SPRESSO_DEBUG
-#define SpressoDebug(...) GDLog(__VA_ARGS__)
+#define SpressoDebug(...) NSLog(__VA_ARGS__)
 #else
 #define SpressoDebug(...)
 #endif
@@ -74,7 +74,7 @@ static void SpressoReachabilityCallback(SCNetworkReachabilityRef target, SCNetwo
             [spresso reachabilityChanged:flags];
         }
     } else {
-        GDLog(@"Spresso reachability callback received unexpected info object");
+        NSLog(@"Spresso reachability callback received unexpected info object");
     }
 }
 
@@ -86,14 +86,14 @@ static Spresso *sharedInstance = nil;
     dispatch_once(&onceToken, ^{
         sharedInstance = [[super alloc] initForEnvironment:environment andFlushInterval:SPRESSO_FLUSH_INTERVAL];
     });
-    [GDEventManager addListener:sharedInstance];
+//    [GDEventManager addListener:sharedInstance];
     return sharedInstance;
 }
 
 + (Spresso *)sharedInstance
 {
     if (sharedInstance == nil) {
-        GDLog(@"%@ warning sharedInstance called before sharedInstanceWithToken:", self);
+        NSLog(@"%@ warning sharedInstance called before sharedInstanceWithToken:", self);
     }
 //    [GDEventManager addListener:sharedInstance];
     return sharedInstance;
@@ -171,7 +171,7 @@ static Spresso *sharedInstance = nil;
             }
         }
         if (!reachabilityOk) {
-            GDLog(@"%@ failed to set up reachability callback: %s", self, SCErrorString(SCError()));
+            NSLog(@"%@ failed to set up reachability callback: %s", self, SCErrorString(SCError()));
         }
         
         NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
@@ -333,10 +333,10 @@ static Spresso *sharedInstance = nil;
         data = [NSJSONSerialization dataWithJSONObject:coercedObj options:0 error:&error];
     }
     @catch (NSException *exception) {
-        GDLog(@"%@ exception encoding api data: %@", self, exception);
+        NSLog(@"%@ exception encoding api data: %@", self, exception);
     }
     if (error) {
-        GDLog(@"%@ error encoding api data: %@", self, error);
+        NSLog(@"%@ error encoding api data: %@", self, error);
     }
     return data;
 }
@@ -363,7 +363,7 @@ static Spresso *sharedInstance = nil;
             NSString *stringKey;
             if (![key isKindOfClass:[NSString class]]) {
                 stringKey = [key description];
-                GDLog(@"%@ warning: property keys should be strings. got: %@. coercing to: %@", self, [key class], stringKey);
+                NSLog(@"%@ warning: property keys should be strings. got: %@. coercing to: %@", self, [key class], stringKey);
             } else {
                 stringKey = [NSString stringWithString:key];
             }
@@ -380,7 +380,7 @@ static Spresso *sharedInstance = nil;
     }
     // default to sending the object's description
     NSString *s = [obj description];
-    GDLog(@"%@ warning: property values should be valid json types. got: %@. coercing to: %@", self, [obj class], s);
+    NSLog(@"%@ warning: property values should be valid json types. got: %@. coercing to: %@", self, [obj class], s);
     return s;
 }
 
@@ -437,7 +437,7 @@ static Spresso *sharedInstance = nil;
         deviceId = [[UIDevice currentDevice].identifierForVendor UUIDString];
     }
     if (!deviceId || deviceId.length == 0) {
-        GDLog(@"%@ error getting device identifier: falling back to uuid", self);
+        NSLog(@"%@ error getting device identifier: falling back to uuid", self);
         deviceId = [[NSUUID UUID] UUIDString];
     }
     if (!deviceId || deviceId.length == 0) {
@@ -471,7 +471,7 @@ static Spresso *sharedInstance = nil;
 - (void)identify:(NSString *)userId
 {
     if (userId == nil || userId.length == 0) {
-        GDLog(@"%@ error blank userId id: %@", self, userId);
+        NSLog(@"%@ error blank userId id: %@", self, userId);
         return;
     }
     dispatch_async(self.serialQueue, ^{
@@ -488,7 +488,7 @@ static Spresso *sharedInstance = nil;
     self.sessionId = sessionId;
     
     if (sessionId == nil || sessionId.length == 0) {
-        GDLog(@"%@ error blank sessionId id: %@", self, sessionId);
+        NSLog(@"%@ error blank sessionId id: %@", self, sessionId);
         return;
     }
     dispatch_async(self.serialQueue, ^{
@@ -523,11 +523,11 @@ static Spresso *sharedInstance = nil;
 - (void)createAlias:(NSString *)alias forDistinctID:(NSString *)distinctID
 {
     if (!alias || [alias length] == 0) {
-        GDLog(@"%@ create alias called with empty alias: %@", self, alias);
+        NSLog(@"%@ create alias called with empty alias: %@", self, alias);
         return;
     }
     if (!distinctID || [distinctID length] == 0) {
-        GDLog(@"%@ create alias called with empty distinct id: %@", self, distinctID);
+        NSLog(@"%@ create alias called with empty distinct id: %@", self, distinctID);
         return;
     }
     [self track:@"createAlias" properties:@{@"distinct_id": distinctID, @"alias": alias}];
@@ -541,7 +541,7 @@ static Spresso *sharedInstance = nil;
 - (void)track:(NSString *)event properties:(NSDictionary *)properties
 {
     if (event == nil || [event length] == 0) {
-        GDLog(@"%@ spresso track called with empty event parameter. using 'mp_event'", self);
+        NSLog(@"%@ spresso track called with empty event parameter. using 'mp_event'", self);
         event = @"mp_event";
     }
     
@@ -860,14 +860,14 @@ static Spresso *sharedInstance = nil;
 - (NSURLRequest *)apiRequestWithEndpoint:(NSString *)endpoint andBody:(NSString *)body
 {
     
-    NSString* userAgent = [[GDServiceManager sharedManager] getDefaultUserAgent];
+//    NSString* userAgent = [[GDServiceManager sharedManager] getDefaultUserAgent];
     
     NSURL *URL = [NSURL URLWithString:[self.serverURL stringByAppendingString:endpoint]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];
     [request setValue:@"gzip" forHTTPHeaderField:@"Accept-Encoding"];
     [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
-    if (userAgent)
-        [request setValue:userAgent forHTTPHeaderField:@"User-Agent"];
+//    if (userAgent)
+//        [request setValue:userAgent forHTTPHeaderField:@"User-Agent"];
     [request setHTTPMethod:@"POST"];
     [request setHTTPBody:[body dataUsingEncoding:NSUTF8StringEncoding]];
     SpressoDebug(@"%@ http request: %@?%@", self, URL, body);
@@ -910,7 +910,7 @@ static Spresso *sharedInstance = nil;
     NSMutableArray *eventsQueueCopy = [NSMutableArray arrayWithArray:[self.eventsQueue copy]];
     SpressoDebug(@"%@ archiving events data to %@: %@", self, filePath, eventsQueueCopy);
     if (![NSKeyedArchiver archiveRootObject:eventsQueueCopy toFile:filePath]) {
-        GDLog(@"%@ unable to archive events data", self);
+        NSLog(@"%@ unable to archive events data", self);
     }
 }
 
@@ -928,7 +928,7 @@ static Spresso *sharedInstance = nil;
 
     SpressoDebug(@"%@ archiving properties data to %@: %@", self, filePath, p);
     if (![NSKeyedArchiver archiveRootObject:p toFile:filePath]) {
-        GDLog(@"%@ unable to archive properties data", self);
+        NSLog(@"%@ unable to archive properties data", self);
     }
 }
 
@@ -946,14 +946,14 @@ static Spresso *sharedInstance = nil;
         SpressoDebug(@"%@ unarchived events data: %@", self, self.eventsQueue);
     }
     @catch (NSException *exception) {
-        GDLog(@"%@ unable to unarchive events data, starting fresh", self);
+        NSLog(@"%@ unable to unarchive events data, starting fresh", self);
         self.eventsQueue = nil;
     }
     if ([[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
         NSError *error;
         BOOL removed = [[NSFileManager defaultManager] removeItemAtPath:filePath error:&error];
         if (!removed) {
-            GDLog(@"%@ unable to remove archived events file at %@ - %@", self, filePath, error);
+            NSLog(@"%@ unable to remove archived events file at %@ - %@", self, filePath, error);
         }
     }
     if (!self.eventsQueue) {
@@ -972,13 +972,13 @@ static Spresso *sharedInstance = nil;
         SpressoDebug(@"%@ unarchived properties data: %@", self, properties);
     }
     @catch (NSException *exception) {
-        GDLog(@"%@ unable to unarchive properties data, starting fresh", self);
+        NSLog(@"%@ unable to unarchive properties data, starting fresh", self);
     }
     if ([[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
         NSError *error;
         BOOL removed = [[NSFileManager defaultManager] removeItemAtPath:filePath error:&error];
         if (!removed) {
-            GDLog(@"%@ unable to remove archived properties file at %@ - %@", self, filePath, error);
+            NSLog(@"%@ unable to remove archived properties file at %@ - %@", self, filePath, error);
         }
     }
     if (properties) {
@@ -1062,7 +1062,7 @@ static Spresso *sharedInstance = nil;
 #pragma mark Events
 -(void) trackSessionStart:(NSString*) postalCode additionalProperties:(NSDictionary*) additionalProperties {
     NSMutableDictionary* dict = [NSMutableDictionary dictionary];
-    [dict setObject:NULLIFNIL(postalCode) forKey:@"postalCode"];
+    [dict setObject:(postalCode == nil ? [NSNull null] : postalCode) forKey:@"postalCode"];
     if (additionalProperties && additionalProperties.count > 0) {
         for (NSString* key in [additionalProperties allKeys]) {
             [dict setObject:[additionalProperties objectForKey:key] forKey:key];
