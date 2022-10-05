@@ -119,7 +119,7 @@ extern NSString* const SpressoEventTypeViewProduct;
  <code>Spresso</code> class, since it performs important initializations to
  the API.
  
- @param apiToken        your project token
+ @param environment        your project environment
  */
 + (Spresso *)sharedInstanceForEnvironment:(SpressoEnvironment)environment;
 
@@ -280,7 +280,7 @@ extern NSString* const SpressoEventTypeViewProduct;
  @discussion
  Return YES to upload now, NO to defer until later.
  
- @param Spresso        Spresso API instance
+ @param spresso        Spresso API instance
  */
 - (BOOL)spressoWillFlush:(Spresso *)spresso;
 

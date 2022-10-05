@@ -62,11 +62,6 @@ NSString* const SpressoEventTypeViewProduct = @"VIEW_PDP";
 
 @end
 
-static NSString *MPURLEncode(NSString *s)
-{
-    return (NSString *)CFBridgingRelease(CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, (CFStringRef)s, NULL, CFSTR("!*'();:@&=+$,/?%#[]"), kCFStringEncodingUTF8));
-}
-
 @implementation Spresso
 
 static void SpressoReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReachabilityFlags flags, void *info)
@@ -241,7 +236,7 @@ static Spresso *sharedInstance = nil;
 - (void)setCurrentRadio
 {
     dispatch_async(self.serialQueue, ^(){
-        _automaticProperties[@"$radio"] = [self currentRadio];
+        self.automaticProperties[@"$radio"] = [self currentRadio];
     });
 }
 
@@ -521,7 +516,7 @@ static Spresso *sharedInstance = nil;
     dispatch_async(self.serialQueue, ^{
         SpressoDebug(@"%@ flush starting", self);
         
-        __strong id<SpressoDelegate> strongDelegate = _delegate;
+        __strong id<SpressoDelegate> strongDelegate = self.delegate;
         if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(spressoWillFlush:)] && ![strongDelegate spressoWillFlush:self]) {
             SpressoDebug(@"%@ flush deferred by delegate", self);
             return;
