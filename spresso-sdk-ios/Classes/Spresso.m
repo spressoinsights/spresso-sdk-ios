@@ -14,7 +14,6 @@
 #import <SystemConfiguration/SystemConfiguration.h>
 #import <UIKit/UIDevice.h>
 #import "Spresso.h"
-#import "KeychainItemWrapper.h"
 #import "SPLogger.h"
 
 #define VERSION @"0.1.0"
