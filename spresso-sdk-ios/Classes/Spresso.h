@@ -9,14 +9,19 @@ typedef NS_ENUM(NSUInteger, SpressoEnvironment) {
     SpressoEnvironmentProd
 };
 
+extern NSString* const SpressoEventTypeCreateOrder;
+extern NSString* const SpressoEventTypeGlimpseProduct;
+extern NSString* const SpressoEventTypeViewPage;
+extern NSString* const SpressoEventTypePurchaseVariant;
+extern NSString* const SpressoEventTypeAddToCart;
+extern NSString* const SpressoEventTypeViewProduct;
+
 @protocol SpressoDelegate;
 
 @interface Spresso : NSObject
 
-@property (atomic, readonly, copy) NSString *distinctId;
 @property (atomic, copy) NSString *userId;
 @property (atomic, copy) NSString *sessionId;
-@property (atomic, copy) NSString *deviceId;
 @property (nonatomic) SpressoEnvironment env;
 @property (nonatomic) BOOL sendEnabled;
 @property (nonatomic) BOOL collectionEnabled;
@@ -205,95 +210,6 @@ typedef NS_ENUM(NSUInteger, SpressoEnvironment) {
  @param properties      properties dictionary
  */
 - (void)track:(NSString *)event properties:(NSDictionary *)properties;
-
-/*!
- @method
- 
- @abstract
- Registers super properties, overwriting ones that have already been set.
- 
- @discussion
- Super properties, once registered, are automatically sent as properties for
- all event tracking calls. They save you having to maintain and add a common
- set of properties to your events. Property keys must be <code>NSString</code>
- objects and values must be <code>NSString</code>, <code>NSNumber</code>,
- <code>NSNull</code>, <code>NSArray</code>, <code>NSDictionary</code>,
- <code>NSDate</code> or <code>NSURL</code> objects.
- 
- @param properties      properties dictionary
- */
-- (void)registerSuperProperties:(NSDictionary *)properties;
-
-/*!
- @method
- 
- @abstract
- Registers super properties without overwriting ones that have already been
- set.
- 
- @discussion
- Property keys must be <code>NSString</code> objects and values must be
- <code>NSString</code>, <code>NSNumber</code>, <code>NSNull</code>,
- <code>NSArray</code>, <code>NSDictionary</code>, <code>NSDate</code> or
- <code>NSURL</code> objects.
- 
- @param properties      properties dictionary
- */
-- (void)registerSuperPropertiesOnce:(NSDictionary *)properties;
-
-/*!
- @method
- 
- @abstract
- Registers super properties without overwriting ones that have already been set
- unless the existing value is equal to defaultValue.
- 
- @discussion
- Property keys must be <code>NSString</code> objects and values must be
- <code>NSString</code>, <code>NSNumber</code>, <code>NSNull</code>,
- <code>NSArray</code>, <code>NSDictionary</code>, <code>NSDate</code> or
- <code>NSURL</code> objects.
- 
- @param properties      properties dictionary
- @param defaultValue    overwrite existing properties that have this value
- */
-- (void)registerSuperPropertiesOnce:(NSDictionary *)properties defaultValue:(id)defaultValue;
-
-/*!
- @method
- 
- @abstract
- Removes a previously registered super property.
- 
- @discussion
- As an alternative to clearing all properties, unregistering specific super
- properties prevents them from being recorded on future events. This operation
- does not affect the value of other super properties. Any property name that is
- not registered is ignored.
- 
- Note that after removing a super property, events will show the attribute as
- having the value <code>undefined</code> in Spresso until a new value is
- registered.
- 
- @param propertyName   array of property name strings to remove
- */
-- (void)unregisterSuperProperty:(NSString *)propertyName;
-
-/*!
- @method
- 
- @abstract
- Clears all currently set super properties.
- */
-- (void)clearSuperProperties;
-
-/*!
- @method
- 
- @abstract
- Returns the currently set super properties.
- */
-- (NSDictionary *)currentSuperProperties;
 
 /*!
  @method

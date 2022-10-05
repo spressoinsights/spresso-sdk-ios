@@ -15,24 +15,31 @@
 #import <UIKit/UIDevice.h>
 #import "Spresso.h"
 #import "KeychainItemWrapper.h"
+#import "SPLogger.h"
 
-#define VERSION @"1.0.0"
+#define VERSION @"0.1.0"
 #define SPRESSO_FLUSH_INTERVAL 30
-#define SESSION_INACTIVITY_TIME 5 * 60 //5 mins
 
 
 
 #ifdef SPRESSO_LOG
-#define SpressoLog(...) NSLog(__VA_ARGS__)
+#define SpressoLog(...) SpressoLog(__VA_ARGS__)
 #else
 #define SpressoLog(...)
 #endif
 
 #ifdef SPRESSO_DEBUG
-#define SpressoDebug(...) NSLog(__VA_ARGS__)
+#define SpressoDebug(...) SpressoLog(__VA_ARGS__)
 #else
 #define SpressoDebug(...)
 #endif
+
+NSString* const SpressoEventTypeCreateOrder = @"CREATE_ORDER";
+NSString* const SpressoEventTypeGlimpseProduct = @"GLIMPSE_PLE";
+NSString* const SpressoEventTypeViewPage = @"PAGE_VIEW";
+NSString* const SpressoEventTypePurchaseVariant = @"PURCHASE_VARIANT";
+NSString* const SpressoEventTypeAddToCart = @"TAP_ADD_TO_CART";
+NSString* const SpressoEventTypeViewProduct = @"VIEW_PDP";
 
 @interface Spresso () <UIAlertViewDelegate> {
     NSUInteger _flushInterval;
@@ -40,10 +47,7 @@
 
 // re-declare internally as readwrite
 
-@property (atomic, copy) NSString *distinctId;
-
 @property (nonatomic, copy) NSString *apiToken;
-@property (atomic, strong) NSDictionary *superProperties;
 @property (nonatomic, strong) NSMutableDictionary *automaticProperties; // mutable because we update $wifi when reachability changes
 @property (nonatomic, strong) NSTimer *timer;
 @property (nonatomic, strong) NSMutableArray *eventsQueue;
@@ -74,7 +78,7 @@ static void SpressoReachabilityCallback(SCNetworkReachabilityRef target, SCNetwo
             [spresso reachabilityChanged:flags];
         }
     } else {
-        NSLog(@"Spresso reachability callback received unexpected info object");
+        SpressoLog(@"Spresso reachability callback received unexpected info object");
     }
 }
 
@@ -86,16 +90,14 @@ static Spresso *sharedInstance = nil;
     dispatch_once(&onceToken, ^{
         sharedInstance = [[super alloc] initForEnvironment:environment andFlushInterval:SPRESSO_FLUSH_INTERVAL];
     });
-//    [GDEventManager addListener:sharedInstance];
     return sharedInstance;
 }
 
 + (Spresso *)sharedInstance
 {
     if (sharedInstance == nil) {
-        NSLog(@"%@ warning sharedInstance called before sharedInstanceWithToken:", self);
+        SpressoLog(@"%@ warning sharedInstance called before sharedInstanceWithToken:", self);
     }
-//    [GDEventManager addListener:sharedInstance];
     return sharedInstance;
 }
 
@@ -108,9 +110,8 @@ static Spresso *sharedInstance = nil;
         self.flushOnBackground = YES;
         self.showNetworkActivityIndicator = YES;
         
-        //by default collection is enabled by sending is OFF
         self.collectionEnabled = YES;
-        self.sendEnabled = NO;
+        self.sendEnabled = YES;
 
         // partner-specific
         self.env = environment;
@@ -141,10 +142,6 @@ static Spresso *sharedInstance = nil;
                 break;
         }
 
-        
-        self.distinctId = [self defaultDistinctId];
-        self.deviceId = [self defaultDeviceId];
-        self.superProperties = [NSMutableDictionary dictionary];
         self.automaticProperties = [self collectAutomaticProperties];
         self.eventsQueue = [NSMutableArray array];
         self.taskId = UIBackgroundTaskInvalid;
@@ -171,7 +168,7 @@ static Spresso *sharedInstance = nil;
             }
         }
         if (!reachabilityOk) {
-            NSLog(@"%@ failed to set up reachability callback: %s", self, SCErrorString(SCError()));
+            SpressoLog(@"%@ failed to set up reachability callback: %s", self, SCErrorString(SCError()));
         }
         
         NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
@@ -241,29 +238,6 @@ static Spresso *sharedInstance = nil;
     return results;
 }
 
-- (NSString *)IFA
-{
-    NSString *ifa = nil;
-#ifndef SPRESSO_NO_IFA
-    Class ASIdentifierManagerClass = NSClassFromString(@"ASIdentifierManager");
-    if (ASIdentifierManagerClass) {
-        SEL sharedManagerSelector = NSSelectorFromString(@"sharedManager");
-        id sharedManager = ((id (*)(id, SEL))[ASIdentifierManagerClass methodForSelector:sharedManagerSelector])(ASIdentifierManagerClass, sharedManagerSelector);
-        SEL advertisingIdentifierSelector = NSSelectorFromString(@"advertisingIdentifier");
-        NSUUID *uuid = ((NSUUID* (*)(id, SEL))[sharedManager methodForSelector:advertisingIdentifierSelector])(sharedManager, advertisingIdentifierSelector);
-        ifa = [uuid UUIDString];
-        
-        if (ifa) {
-            NSString *trimmedIFA = [[ifa stringByReplacingOccurrencesOfString:@"0" withString:@""] stringByReplacingOccurrencesOfString:@"-" withString:@""];
-            if (trimmedIFA && [trimmedIFA length] == 0) {
-                ifa = nil;
-            }
-        }
-    }
-#endif
-    return ifa;
-}
-
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
 - (void)setCurrentRadio
 {
@@ -297,7 +271,6 @@ static Spresso *sharedInstance = nil;
     [p setValue:[device systemName] forKey:@"os"];
     [p setValue:[device systemVersion] forKey:@"osVersion"];
     [p setValue:deviceModel forKey:@"model"];
-  //  [p setValue:deviceModel forKey:@"mp_device_model"]; // legacy
     CGSize size = [UIScreen mainScreen].bounds.size;
     [p setValue:@((NSInteger)size.height) forKey:@"screenHeight"];
     [p setValue:@((NSInteger)size.width) forKey:@"screenWidth"];
@@ -306,10 +279,7 @@ static Spresso *sharedInstance = nil;
     if (carrier.carrierName.length) {
         [p setValue:carrier.carrierName forKey:@"carrier"];
     }
-    [p setValue:[self IFA] forKey:@"idfa"];
  
-    [p setValue:self.deviceId forKey:@"deviceId"];
-    [p setValue:self.deviceId forKey:@"boxedDeviceId"];
     return p;
 }
 
@@ -333,10 +303,10 @@ static Spresso *sharedInstance = nil;
         data = [NSJSONSerialization dataWithJSONObject:coercedObj options:0 error:&error];
     }
     @catch (NSException *exception) {
-        NSLog(@"%@ exception encoding api data: %@", self, exception);
+        SpressoLog(@"%@ exception encoding api data: %@", self, exception);
     }
     if (error) {
-        NSLog(@"%@ error encoding api data: %@", self, error);
+        SpressoLog(@"%@ error encoding api data: %@", self, error);
     }
     return data;
 }
@@ -363,7 +333,7 @@ static Spresso *sharedInstance = nil;
             NSString *stringKey;
             if (![key isKindOfClass:[NSString class]]) {
                 stringKey = [key description];
-                NSLog(@"%@ warning: property keys should be strings. got: %@. coercing to: %@", self, [key class], stringKey);
+                SpressoLog(@"%@ warning: property keys should be strings. got: %@. coercing to: %@", self, [key class], stringKey);
             } else {
                 stringKey = [NSString stringWithString:key];
             }
@@ -380,7 +350,7 @@ static Spresso *sharedInstance = nil;
     }
     // default to sending the object's description
     NSString *s = [obj description];
-    NSLog(@"%@ warning: property values should be valid json types. got: %@. coercing to: %@", self, [obj class], s);
+    SpressoLog(@"%@ warning: property values should be valid json types. got: %@. coercing to: %@", self, [obj class], s);
     return s;
 }
 
@@ -389,12 +359,6 @@ static Spresso *sharedInstance = nil;
     NSString *b64String = @"";
     NSData *data = [self JSONSerializeObject: @{ @"datas": array } ];
     if (data) {
-//        b64String = [data mp_base64EncodedString];
-//        b64String = (id)CFBridgingRelease(CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,
-//                                                                                  (CFStringRef)b64String,
-//                                                                                  NULL,
-//                                                                                  CFSTR("!*'();:@&=+$,/?%#[]"),
-//                                                                                  kCFStringEncodingUTF8));
         b64String = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     }
     return b64String;
@@ -421,57 +385,10 @@ static Spresso *sharedInstance = nil;
     }
 }
 
-- (NSString *)defaultDistinctId
-{
-    return [self defaultDeviceId];
-}
-
-- (NSString *)defaultDeviceId
-{
-    NSString *deviceId = [self getDeviceIdFromKeychain];
-    if (deviceId && deviceId.length > 0) {
-        return deviceId;
-    }
-    
-    if ((!deviceId || deviceId.length == 0) && NSClassFromString(@"UIDevice")) {
-        deviceId = [[UIDevice currentDevice].identifierForVendor UUIDString];
-    }
-    if (!deviceId || deviceId.length == 0) {
-        NSLog(@"%@ error getting device identifier: falling back to uuid", self);
-        deviceId = [[NSUUID UUID] UUIDString];
-    }
-    if (!deviceId || deviceId.length == 0) {
-        deviceId = [self createOwnDeviceId];
-    }
-    
-    if (deviceId) {
-        [self storeDeviceIdInKeychain:deviceId];
-    }
-    
-    return deviceId;
-}
-
-- (NSString *) createOwnDeviceId
-{
-    NSMutableString *randomString = [[NSMutableString alloc] init];
-    NSString *chars = [NSString stringWithFormat:@"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"];
-    for (int i = 0; i < 32; i++) {
-        [randomString appendFormat: @"%C", [chars characterAtIndex: arc4random_uniform((unsigned int)[chars length])]];
-    }
-    
-    [randomString insertString:@"-" atIndex:20];
-    [randomString insertString:@"-" atIndex:16];
-    [randomString insertString:@"-" atIndex:12];
-    [randomString insertString:@"-" atIndex:8];
-    
-    return randomString;
-}
-
-
 - (void)identify:(NSString *)userId
 {
     if (userId == nil || userId.length == 0) {
-        NSLog(@"%@ error blank userId id: %@", self, userId);
+        SpressoLog(@"%@ error blank userId id: %@", self, userId);
         return;
     }
     dispatch_async(self.serialQueue, ^{
@@ -482,57 +399,6 @@ static Spresso *sharedInstance = nil;
     });
 }
 
-- (void)identifySessionWithId:(NSString *)sessionId {
-    return; //this is deprecated
-    
-    self.sessionId = sessionId;
-    
-    if (sessionId == nil || sessionId.length == 0) {
-        NSLog(@"%@ error blank sessionId id: %@", self, sessionId);
-        return;
-    }
-    dispatch_async(self.serialQueue, ^{
-        self.sessionId = sessionId;
-        if ([Spresso inBackground]) {
-            [self archiveProperties];
-        }
-    });
-}
-
--(void) storeDeviceIdInKeychain: (NSString*) deviceId {
-    
-    KeychainItemWrapper* wrapper = [[KeychainItemWrapper alloc] initWithIdentifier:@"DeviceID" accessGroup:nil];
-    
-    if (!deviceId) {
-        [wrapper resetKeychainItem];
-        return;
-    }
-    
-    [wrapper setObject:deviceId forKey:(__bridge id)(kSecValueData)];
-}
-
--(NSString*) getDeviceIdFromKeychain {
-    
-    KeychainItemWrapper* wrapper = [[KeychainItemWrapper alloc] initWithIdentifier:@"DeviceID" accessGroup:nil];
-    
-    NSString* deviceId = [wrapper objectForKey:(__bridge id)(kSecValueData)];
-    
-    return deviceId;
-}
-
-- (void)createAlias:(NSString *)alias forDistinctID:(NSString *)distinctID
-{
-    if (!alias || [alias length] == 0) {
-        NSLog(@"%@ create alias called with empty alias: %@", self, alias);
-        return;
-    }
-    if (!distinctID || [distinctID length] == 0) {
-        NSLog(@"%@ create alias called with empty distinct id: %@", self, distinctID);
-        return;
-    }
-    [self track:@"createAlias" properties:@{@"distinct_id": distinctID, @"alias": alias}];
-}
-
 - (void)track:(NSString *)event
 {
     [self track:event properties:nil];
@@ -541,7 +407,7 @@ static Spresso *sharedInstance = nil;
 - (void)track:(NSString *)event properties:(NSDictionary *)properties
 {
     if (event == nil || [event length] == 0) {
-        NSLog(@"%@ spresso track called with empty event parameter. using 'mp_event'", self);
+        SpressoLog(@"%@ spresso track called with empty event parameter. using 'mp_event'", self);
         event = @"mp_event";
     }
     
@@ -555,37 +421,20 @@ static Spresso *sharedInstance = nil;
     dispatch_async(self.serialQueue, ^{
         NSMutableDictionary *p = [NSMutableDictionary dictionary];
         [p addEntriesFromDictionary:self.automaticProperties];
-//        p[@"token"] = self.apiToken;
-     //   p[@"utcTimestampMs"] = epochMilliseconds;
 
         if (self.userId) {
             p[@"userId"] = self.userId;
         }
         
-        [self checkSessionId];
-        if (self.sessionId) {
-            p[@"sessionId"] = self.sessionId;
-        }
-        
-        [p addEntriesFromDictionary:self.superProperties];
         if (properties) {
             [p addEntriesFromDictionary:properties];
         }
         NSMutableDictionary *e = [NSMutableDictionary dictionaryWithDictionary:@{@"event": event, @"properties": [NSDictionary dictionaryWithDictionary:p], @"utcTimestampMs" : epochMilliseconds}];
-        
-  
-        
-        if (self.deviceId) {
-            [e setValue:self.deviceId forKey:@"deviceId"];
-            [e setValue:self.deviceId forKey:@"boxedDeviceId"];
-        }
-        
-        NSString* idfa = [self IFA];
-        if (idfa) {
-            [e setValue:idfa forKey:@"idfa"];
-        }
-        
         [e setValue:VERSION forKey:@"v"];
+//        p[@"event"] = event;
+//        p[@"v"] = VERSION;
+//        p[@"utcTimestampMs"] = epochMilliseconds;
+  
         SpressoLog(@"%@ queueing event: %@", self, e);
         
         [self.eventsQueue addObject:e];
@@ -602,119 +451,11 @@ static Spresso *sharedInstance = nil;
     });
 }
 
-- (void)registerSuperProperties:(NSDictionary *)properties
-{
-    properties = [properties copy];
-    [Spresso assertPropertyTypes:properties];
-    dispatch_async(self.serialQueue, ^{
-        NSMutableDictionary *tmp = [NSMutableDictionary dictionaryWithDictionary:self.superProperties];
-        [tmp addEntriesFromDictionary:properties];
-        self.superProperties = [NSDictionary dictionaryWithDictionary:tmp];
-        if ([Spresso inBackground]) {
-            [self archiveProperties];
-        }
-    });
-}
-
-- (void)registerSuperPropertiesOnce:(NSDictionary *)properties
-{
-    properties = [properties copy];
-    [Spresso assertPropertyTypes:properties];
-    dispatch_async(self.serialQueue, ^{
-        NSMutableDictionary *tmp = [NSMutableDictionary dictionaryWithDictionary:self.superProperties];
-        for (NSString *key in properties) {
-            if (tmp[key] == nil) {
-                tmp[key] = properties[key];
-            }
-        }
-        self.superProperties = [NSDictionary dictionaryWithDictionary:tmp];
-        if ([Spresso inBackground]) {
-            [self archiveProperties];
-        }
-    });
-}
-
-- (void)registerSuperPropertiesOnce:(NSDictionary *)properties defaultValue:(id)defaultValue
-{
-    properties = [properties copy];
-    [Spresso assertPropertyTypes:properties];
-    dispatch_async(self.serialQueue, ^{
-        NSMutableDictionary *tmp = [NSMutableDictionary dictionaryWithDictionary:self.superProperties];
-        for (NSString *key in properties) {
-            id value = tmp[key];
-            if (value == nil || [value isEqual:defaultValue]) {
-                tmp[key] = properties[key];
-            }
-        }
-        self.superProperties = [NSDictionary dictionaryWithDictionary:tmp];
-        if ([Spresso inBackground]) {
-            [self archiveProperties];
-        }
-    });
-}
-
-- (void)unregisterSuperProperty:(NSString *)propertyName
-{
-    dispatch_async(self.serialQueue, ^{
-        NSMutableDictionary *tmp = [NSMutableDictionary dictionaryWithDictionary:self.superProperties];
-        if (tmp[propertyName] != nil) {
-            [tmp removeObjectForKey:propertyName];
-        }
-        self.superProperties = [NSDictionary dictionaryWithDictionary:tmp];
-        if ([Spresso inBackground]) {
-            [self archiveProperties];
-        }
-    });
-}
-
-- (void)clearSuperProperties
-{
-    dispatch_async(self.serialQueue, ^{
-        self.superProperties = @{};
-        if ([Spresso inBackground]) {
-            [self archiveProperties];
-        }
-    });
-}
-
-- (NSDictionary *)currentSuperProperties
-{
-    return [self.superProperties copy];
-}
-
--(void) checkSessionId {
-    if (self.sessionId) {
-        if (!self.lastActivityDate) {
-            [self createNewSessionId];
-        } else {
-            NSDate* now = [NSDate date];
-            NSTimeInterval timeSinceLastActivity = [now timeIntervalSinceDate:self.lastActivityDate];
-            if (timeSinceLastActivity > SESSION_INACTIVITY_TIME) {
-                [self createNewSessionId];
-            }
-        }
-    } else {
-        [self createNewSessionId];
-    }
-}
-
--(void) createNewSessionId {
-    if (self.deviceId) {
-        NSNumber *epochMilliseconds = @(round([[NSDate date] timeIntervalSince1970] * 1000));
-        self.sessionId = [NSString stringWithFormat:@"%@-%@", self.deviceId, [epochMilliseconds stringValue]];
-    } else {
-        self.sessionId = nil;
-    }
-}
-
 - (void)reset
 {
     dispatch_async(self.serialQueue, ^{
-        self.distinctId = [self defaultDistinctId];
         self.nameTag = nil;
         self.userId = nil;
-        self.sessionId = nil;
-        self.superProperties = [NSMutableDictionary dictionary];
         self.eventsQueue = [NSMutableArray array];
         [self archive];
     });
@@ -723,7 +464,6 @@ static Spresso *sharedInstance = nil;
 - (void)softReset
 {
     dispatch_async(self.serialQueue, ^{
-        self.superProperties = [NSMutableDictionary dictionary];
         self.eventsQueue = [NSMutableArray array];
         [self archive];
     });
@@ -812,7 +552,7 @@ static Spresso *sharedInstance = nil;
         NSString *requestData = [self encodeAPIData:batch];
         NSString *postBody = [NSString stringWithFormat:@"%@", requestData];
 
-        SpressoDebug(@"%@ flushing %lu of %lu to %@: %@", self, (unsigned long)[batch count], (unsigned long)[queue count], endpoint, queue); 
+        SpressoDebug(@"%@ flushing %lu of %lu to %@: %@", self, (unsigned long)[batch count], (unsigned long)[queue count], endpoint, queue);
         
         SpressoDebug(@"post body: %@", requestData);
         NSURLRequest *request = [self apiRequestWithEndpoint:endpoint andBody:postBody];
@@ -910,7 +650,7 @@ static Spresso *sharedInstance = nil;
     NSMutableArray *eventsQueueCopy = [NSMutableArray arrayWithArray:[self.eventsQueue copy]];
     SpressoDebug(@"%@ archiving events data to %@: %@", self, filePath, eventsQueueCopy);
     if (![NSKeyedArchiver archiveRootObject:eventsQueueCopy toFile:filePath]) {
-        NSLog(@"%@ unable to archive events data", self);
+        SpressoLog(@"%@ unable to archive events data", self);
     }
 }
 
@@ -919,16 +659,12 @@ static Spresso *sharedInstance = nil;
     NSString *filePath = [self propertiesFilePath];
     NSMutableDictionary *p = [NSMutableDictionary dictionary];
     [p setValue:self.userId forKey:@"userId"];
-    [p setValue:self.sessionId forKey:@"sessionId"];
-    [p setValue:self.deviceId forKey:@"deviceId"];
-    [p setValue:self.distinctId forKey:@"distinctId"];
     [p setValue:self.nameTag forKey:@"nameTag"];
-    [p setValue:self.superProperties forKey:@"superProperties"];
 
 
     SpressoDebug(@"%@ archiving properties data to %@: %@", self, filePath, p);
     if (![NSKeyedArchiver archiveRootObject:p toFile:filePath]) {
-        NSLog(@"%@ unable to archive properties data", self);
+        SpressoLog(@"%@ unable to archive properties data", self);
     }
 }
 
@@ -946,14 +682,14 @@ static Spresso *sharedInstance = nil;
         SpressoDebug(@"%@ unarchived events data: %@", self, self.eventsQueue);
     }
     @catch (NSException *exception) {
-        NSLog(@"%@ unable to unarchive events data, starting fresh", self);
+        SpressoLog(@"%@ unable to unarchive events data, starting fresh", self);
         self.eventsQueue = nil;
     }
     if ([[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
         NSError *error;
         BOOL removed = [[NSFileManager defaultManager] removeItemAtPath:filePath error:&error];
         if (!removed) {
-            NSLog(@"%@ unable to remove archived events file at %@ - %@", self, filePath, error);
+            SpressoLog(@"%@ unable to remove archived events file at %@ - %@", self, filePath, error);
         }
     }
     if (!self.eventsQueue) {
@@ -972,23 +708,19 @@ static Spresso *sharedInstance = nil;
         SpressoDebug(@"%@ unarchived properties data: %@", self, properties);
     }
     @catch (NSException *exception) {
-        NSLog(@"%@ unable to unarchive properties data, starting fresh", self);
+        SpressoLog(@"%@ unable to unarchive properties data, starting fresh", self);
     }
     if ([[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
         NSError *error;
         BOOL removed = [[NSFileManager defaultManager] removeItemAtPath:filePath error:&error];
         if (!removed) {
-            NSLog(@"%@ unable to remove archived properties file at %@ - %@", self, filePath, error);
+            
+            SpressoLog(@"%@ unable to remove archived properties file at %@ - %@", self, filePath, error);
         }
     }
     if (properties) {
         self.userId = properties[@"userId"];
-        self.sessionId = properties[@"sessionId"];
-        self.distinctId = properties[@"distinctId"] ? properties[@"distinctId"] : [self defaultDistinctId];
         self.nameTag = properties[@"nameTag"];
-        self.superProperties = properties[@"superProperties"] ? properties[@"superProperties"] : [NSMutableDictionary dictionary];
-
-
     }
 }
 
@@ -997,20 +729,11 @@ static Spresso *sharedInstance = nil;
 - (void)applicationDidBecomeActive:(NSNotification *)notification
 {
     SpressoDebug(@"%@ application did become active", self);
-    //track session begin
-    //track a session start
-    
-    //moving this till after user data is retrieved
-//    [self trackSessionStart];
-//    [self startFlushTimer];
 }
 
 - (void)applicationWillResignActive:(NSNotification *)notification
 {
     SpressoDebug(@"%@ application will resign active", self);
-    //track session end
-    //track a session start
-    [self trackSessionEnd];
     [self stopFlushTimer];
 }
 
@@ -1057,23 +780,6 @@ static Spresso *sharedInstance = nil;
     dispatch_async(_serialQueue, ^{
         [self archive];
     });
-}
-
-#pragma mark Events
--(void) trackSessionStart:(NSString*) postalCode additionalProperties:(NSDictionary*) additionalProperties {
-    NSMutableDictionary* dict = [NSMutableDictionary dictionary];
-    [dict setObject:(postalCode == nil ? [NSNull null] : postalCode) forKey:@"postalCode"];
-    if (additionalProperties && additionalProperties.count > 0) {
-        for (NSString* key in [additionalProperties allKeys]) {
-            [dict setObject:[additionalProperties objectForKey:key] forKey:key];
-        }
-    }
-    [self track:@"sessionStart" properties: dict];
-    [self startFlushTimer];
-}
-
--(void) trackSessionEnd {
-    [self track:@"sessionEnd" properties: @{}];
 }
 
 
