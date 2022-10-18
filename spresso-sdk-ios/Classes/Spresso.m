@@ -117,17 +117,17 @@ static Spresso *sharedInstance = nil;
             }
             case SpressoEnvironmentProd: {
                 self.apiToken = @"prod";
-                self.serverURL = @"https://stats.myboxed.com.my";
+                self.serverURL = @"https://public-pensieve-stats.us-east4.prod.spresso.com";
                 break;
             }
             case SpressoEnvironmentStaging: {
                 self.apiToken = @"staging_token";
-                self.serverURL = @"https://vpc-staging-spresso-collector-public.myboxed.com.my";
+                self.serverURL = @"https://public-pensieve-stats.us-east4.staging.spresso.com";
                 break;
             }
             case SpressoEnvironmentDev: {
                 self.apiToken = @"devtoken";
-                self.serverURL = @"http://vpc-staging-spresso-collector-public.myboxed.com.my";
+                self.serverURL = @"https://public-pensieve-stats.us-east4.staging.spresso.com";
                 break;
             }
             default:
