@@ -15,6 +15,7 @@
 #import <UIKit/UIDevice.h>
 #import "Spresso.h"
 #import "SPLogger.h"
+#import "SPKeychainItemWrapper.h"
 
 #define VERSION @"0.1.0"
 #define SPRESSO_FLUSH_INTERVAL 30
@@ -33,12 +34,12 @@
 #define SpressoDebug(...)
 #endif
 
-NSString* const SpressoEventTypeCreateOrder = @"CREATE_ORDER";
-NSString* const SpressoEventTypeGlimpseProduct = @"GLIMPSE_PLE";
-NSString* const SpressoEventTypeViewPage = @"PAGE_VIEW";
-NSString* const SpressoEventTypePurchaseVariant = @"PURCHASE_VARIANT";
-NSString* const SpressoEventTypeAddToCart = @"TAP_ADD_TO_CART";
-NSString* const SpressoEventTypeViewProduct = @"VIEW_PDP";
+NSString* const SpressoEventTypeCreateOrder = @"spresso_create_order";
+NSString* const SpressoEventTypeGlimpseProduct = @"spresso_glimpse_ple";
+NSString* const SpressoEventTypeViewPage = @"spresso_page_view";
+NSString* const SpressoEventTypePurchaseVariant = @"spresso_purchase_variant";
+NSString* const SpressoEventTypeAddToCart = @"spresso_tap_add_to_cart";
+NSString* const SpressoEventTypeViewProduct = @"spresso_view_pdp";
 
 @interface Spresso () <UIAlertViewDelegate> {
     NSUInteger _flushInterval;
@@ -136,6 +137,7 @@ static Spresso *sharedInstance = nil;
                 break;
         }
 
+        self.deviceId = [self defaultDeviceId];
         self.automaticProperties = [self collectAutomaticProperties];
         self.eventsQueue = [NSMutableArray array];
         self.taskId = UIBackgroundTaskInvalid;
@@ -273,6 +275,7 @@ static Spresso *sharedInstance = nil;
     if (carrier.carrierName.length) {
         [p setValue:carrier.carrierName forKey:@"carrier"];
     }
+    [p setValue:self.deviceId forKey:@"deviceId"];
  
     return p;
 }
@@ -379,6 +382,43 @@ static Spresso *sharedInstance = nil;
     }
 }
 
+- (NSString *)defaultDistinctId
+{
+    return [self defaultDeviceId];
+}
+
+- (NSString *)defaultDeviceId
+{
+    NSString *deviceId = [self getDeviceIdFromKeychain];
+    if (deviceId && deviceId.length > 0) {
+        return deviceId;
+    }
+    
+    deviceId = [self createOwnDeviceId];
+    
+    if (deviceId) {
+        [self storeDeviceIdInKeychain:deviceId];
+    }
+    
+    return deviceId;
+}
+
+- (NSString *) createOwnDeviceId
+{
+    NSMutableString *randomString = [[NSMutableString alloc] init];
+    NSString *chars = [NSString stringWithFormat:@"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"];
+    for (int i = 0; i < 32; i++) {
+        [randomString appendFormat: @"%C", [chars characterAtIndex: arc4random_uniform((unsigned int)[chars length])]];
+    }
+    
+    [randomString insertString:@"-" atIndex:20];
+    [randomString insertString:@"-" atIndex:16];
+    [randomString insertString:@"-" atIndex:12];
+    [randomString insertString:@"-" atIndex:8];
+    
+    return randomString;
+}
+
 - (void)identify:(NSString *)userId
 {
     if (userId == nil || userId.length == 0) {
@@ -391,6 +431,27 @@ static Spresso *sharedInstance = nil;
             [self archiveProperties];
         }
     });
+}
+
+-(void) storeDeviceIdInKeychain: (NSString*) deviceId {
+    
+    SPKeychainItemWrapper* wrapper = [[SPKeychainItemWrapper alloc] initWithIdentifier:@"SpressoDeviceID" accessGroup:nil];
+    NSLog(@"trying to store device id into keychain = %@", deviceId);
+    if (!deviceId) {
+        [wrapper resetKeychainItem];
+        return;
+    }
+    
+    [wrapper setObject:@"spresso" forKey:(__bridge id)(kSecAttrAccount)];
+    [wrapper setObject:deviceId forKey:(__bridge id)(kSecValueData)];
+}
+
+-(NSString*) getDeviceIdFromKeychain {
+    
+    SPKeychainItemWrapper* wrapper = [[SPKeychainItemWrapper alloc] initWithIdentifier:@"SpressoDeviceID" accessGroup:@"Spresso"];
+    NSString* deviceId = [wrapper objectForKey:(__bridge id)(kSecValueData)];
+    
+    return deviceId;
 }
 
 - (void)track:(NSString *)event
@@ -428,6 +489,10 @@ static Spresso *sharedInstance = nil;
 //        p[@"event"] = event;
 //        p[@"v"] = VERSION;
 //        p[@"utcTimestampMs"] = epochMilliseconds;
+        
+        if (self.deviceId) {
+            [e setValue:self.deviceId forKey:@"deviceId"];
+        }
   
         SpressoLog(@"%@ queueing event: %@", self, e);
         
@@ -654,6 +719,7 @@ static Spresso *sharedInstance = nil;
     NSMutableDictionary *p = [NSMutableDictionary dictionary];
     [p setValue:self.userId forKey:@"userId"];
     [p setValue:self.nameTag forKey:@"nameTag"];
+    [p setValue:self.deviceId forKey:@"deviceId"];
 
 
     SpressoDebug(@"%@ archiving properties data to %@: %@", self, filePath, p);

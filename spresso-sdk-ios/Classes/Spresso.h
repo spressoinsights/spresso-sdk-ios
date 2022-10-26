@@ -22,6 +22,7 @@ extern NSString* const SpressoEventTypeViewProduct;
 
 @property (atomic, copy) NSString *userId;
 @property (atomic, copy) NSString *sessionId;
+@property (atomic, copy) NSString *deviceId;
 @property (nonatomic) SpressoEnvironment env;
 @property (nonatomic) BOOL sendEnabled;
 @property (nonatomic) BOOL collectionEnabled;
