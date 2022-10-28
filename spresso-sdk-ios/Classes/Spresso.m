@@ -665,6 +665,9 @@ static Spresso *sharedInstance = nil;
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];
     [request setValue:@"gzip" forHTTPHeaderField:@"Accept-Encoding"];
     [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    if (self.orgId && self.orgId.length > 0) {
+        [request addValue:self.orgId forHTTPHeaderField:@"org-id"];
+    }
 //    if (userAgent)
 //        [request setValue:userAgent forHTTPHeaderField:@"User-Agent"];
     [request setHTTPMethod:@"POST"];
