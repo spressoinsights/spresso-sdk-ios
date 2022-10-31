@@ -10,7 +10,8 @@ typedef NS_ENUM(NSUInteger, SpressoEnvironment) {
 };
 
 extern NSString* const SpressoEventTypeCreateOrder;
-extern NSString* const SpressoEventTypeGlimpseProduct;
+extern NSString* const SpressoEventTypeGlimpsePLE;
+extern NSString* const SpressoEventTypeGlimpseProductPLE;
 extern NSString* const SpressoEventTypeViewPage;
 extern NSString* const SpressoEventTypePurchaseVariant;
 extern NSString* const SpressoEventTypeAddToCart;
