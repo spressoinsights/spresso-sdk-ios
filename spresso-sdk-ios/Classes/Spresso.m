@@ -35,7 +35,8 @@
 #endif
 
 NSString* const SpressoEventTypeCreateOrder = @"spresso_create_order";
-NSString* const SpressoEventTypeGlimpseProduct = @"spresso_glimpse_ple";
+NSString* const SpressoEventTypeGlimpsePLE = @"spresso_glimpse_ple";
+NSString* const SpressoEventTypeGlimpseProductPLE = @"spresso_glimpse_product_ple";
 NSString* const SpressoEventTypeViewPage = @"spresso_page_view";
 NSString* const SpressoEventTypePurchaseVariant = @"spresso_purchase_variant";
 NSString* const SpressoEventTypeAddToCart = @"spresso_tap_add_to_cart";
@@ -394,7 +395,15 @@ static Spresso *sharedInstance = nil;
         return deviceId;
     }
     
-    deviceId = [self createOwnDeviceId];
+    if ((!deviceId || deviceId.length == 0) && NSClassFromString(@"UIDevice")) {
+        deviceId = [[UIDevice currentDevice].identifierForVendor UUIDString];
+    }
+    if (!deviceId || deviceId.length == 0) {
+        deviceId = [[NSUUID UUID] UUIDString];
+    }
+    if (!deviceId || deviceId.length == 0) {
+        deviceId = [self createOwnDeviceId];
+    }
     
     if (deviceId) {
         [self storeDeviceIdInKeychain:deviceId];
