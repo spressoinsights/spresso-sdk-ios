@@ -37,7 +37,7 @@
 NSString* const SpressoEventTypeCreateOrder = @"spresso_create_order";
 NSString* const SpressoEventTypeGlimpsePLE = @"spresso_glimpse_ple";
 NSString* const SpressoEventTypeGlimpseProductPLE = @"spresso_glimpse_product_ple";
-NSString* const SpressoEventTypeViewPage = @"spresso_page_view";
+NSString* const SpressoEventTypeViewPage = @"spresso_screen_view";
 NSString* const SpressoEventTypePurchaseVariant = @"spresso_purchase_variant";
 NSString* const SpressoEventTypeAddToCart = @"spresso_tap_add_to_cart";
 NSString* const SpressoEventTypeViewProduct = @"spresso_view_pdp";
