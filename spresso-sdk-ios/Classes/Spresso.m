@@ -488,8 +488,13 @@ static Spresso *sharedInstance = nil;
 
         if (self.userId) {
             p[@"userId"] = self.userId;
+            p[@"isLoggedIn"] = @(1);
+        } else {
+            p[@"isLoggedIn"] = @(0);
         }
+        
         p[@"uid"] = [[NSUUID UUID] UUIDString];
+        p[@"timezoneOffsetms"] = @([[NSTimeZone systemTimeZone] secondsFromGMT] * 1000);
         
         if (properties) {
             [p addEntriesFromDictionary:properties];
