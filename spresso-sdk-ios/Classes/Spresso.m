@@ -489,6 +489,7 @@ static Spresso *sharedInstance = nil;
         if (self.userId) {
             p[@"userId"] = self.userId;
         }
+        p[@"uid"] = [[NSUUID UUID] UUIDString];
         
         if (properties) {
             [p addEntriesFromDictionary:properties];
