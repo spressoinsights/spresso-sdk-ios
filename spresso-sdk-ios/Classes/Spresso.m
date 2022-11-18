@@ -488,13 +488,10 @@ static Spresso *sharedInstance = nil;
 
         if (self.userId) {
             p[@"userId"] = self.userId;
-            p[@"isLoggedIn"] = @(1);
+            p[@"isLoggedIn"] = @(YES);
         } else {
-            p[@"isLoggedIn"] = @(0);
+            p[@"isLoggedIn"] = @(NO);
         }
-        
-        p[@"uid"] = [[NSUUID UUID] UUIDString];
-        p[@"timezoneOffsetms"] = @([[NSTimeZone systemTimeZone] secondsFromGMT] * 1000);
         
         if (properties) {
             [p addEntriesFromDictionary:properties];
@@ -508,6 +505,8 @@ static Spresso *sharedInstance = nil;
         if (self.deviceId) {
             [e setValue:self.deviceId forKey:@"deviceId"];
         }
+        [e setValue:[[NSUUID UUID] UUIDString] forKey:@"uid"];
+        [e setValue:@([[NSTimeZone systemTimeZone] secondsFromGMT] * 1000) forKey:@"timezoneOffset"];
   
         SpressoLog(@"%@ queueing event: %@", self, e);
         
