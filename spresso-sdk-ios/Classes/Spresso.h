@@ -24,6 +24,7 @@ extern NSString* const SpressoEventTypeViewProduct;
 @property (atomic, copy) NSString *userId;
 @property (atomic, copy) NSString *sessionId;
 @property (atomic, copy) NSString *deviceId;
+@property (atomic, copy) NSString *refUserId;
 @property (atomic, copy) NSString *orgId;
 @property (nonatomic) SpressoEnvironment env;
 @property (nonatomic) BOOL sendEnabled;
@@ -181,7 +182,7 @@ extern NSString* const SpressoEventTypeViewProduct;
  */
 - (void)identify:(NSString *)distinctId;
 
-- (void)identifySessionWithId:(NSString *)sessionId;
+- (void)identifyRefUserId:(NSString *)refUserId;
 
 /*!
  @method

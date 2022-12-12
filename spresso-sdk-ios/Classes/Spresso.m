@@ -442,6 +442,18 @@ static Spresso *sharedInstance = nil;
     });
 }
 
+- (void)identifyRefUserId:(NSString *)refUserId {
+    if (refUserId == nil || refUserId.length == 0) {
+        return;
+    }
+    dispatch_async(self.serialQueue, ^{
+        self.refUserId = refUserId;
+        if ([Spresso inBackground]) {
+            [self archiveProperties];
+        }
+    });
+}
+
 -(void) storeDeviceIdInKeychain: (NSString*) deviceId {
     
     SPKeychainItemWrapper* wrapper = [[SPKeychainItemWrapper alloc] initWithIdentifier:@"SpressoDeviceID" accessGroup:nil];
@@ -492,6 +504,9 @@ static Spresso *sharedInstance = nil;
         } else {
             p[@"isLoggedIn"] = @(NO);
         }
+        if (self.refUserId) {
+            p[@"refUserId"] = self.refUserId;
+        }
         
         if (properties) {
             [p addEntriesFromDictionary:properties];
@@ -529,6 +544,7 @@ static Spresso *sharedInstance = nil;
     dispatch_async(self.serialQueue, ^{
         self.nameTag = nil;
         self.userId = nil;
+        self.refUserId = nil;
         self.eventsQueue = [NSMutableArray array];
         [self archive];
     });
@@ -737,6 +753,7 @@ static Spresso *sharedInstance = nil;
     [p setValue:self.userId forKey:@"userId"];
     [p setValue:self.nameTag forKey:@"nameTag"];
     [p setValue:self.deviceId forKey:@"deviceId"];
+    [p setValue:self.refUserId forKey:@"refUserId"];
 
 
     SpressoDebug(@"%@ archiving properties data to %@: %@", self, filePath, p);
@@ -798,6 +815,7 @@ static Spresso *sharedInstance = nil;
     if (properties) {
         self.userId = properties[@"userId"];
         self.nameTag = properties[@"nameTag"];
+        self.refUserId = properties[@"refUserId"];
     }
 }
 
