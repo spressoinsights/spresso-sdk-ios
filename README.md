@@ -49,7 +49,7 @@ Spresso.sharedInstance().identify("<user_id>")
 
 ## Tracking Events
 
-Example of tracking viewing a product
+Example of sending data when a user views a product
 
 #### Swift
 
