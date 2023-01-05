@@ -17,16 +17,16 @@ pod 'spresso-sdk-ios'
 
 ## Initialization
 
-Initialize the library with your current environment and orgId.
+Initialize the library with your current environment and Org ID.
 
-### Swift
+#### Swift
 
 ```
 Spresso.sharedInstance(for: .prod)
 Spresso.sharedInstance().orgId = <org_id>
 ```
 
-### Objective-C
+#### Objective-C
 
 ```
 [Spresso sharedInstanceForEnvironment:SpressoEnvironmentProd];
@@ -35,13 +35,13 @@ Spresso.sharedInstance().orgId = <org_id>
 
 ## Setting a User
 
-### Swift
+#### Swift
 
 ```
 Spresso.sharedInstance().identify("<user_id>")
 ```
 
-### Objective-C
+#### Objective-C
 
 ```
 [[Spresso sharedInstance] identify:@"<user_id"];
@@ -51,7 +51,7 @@ Spresso.sharedInstance().identify("<user_id>")
 
 Example of tracking viewing a product
 
-### Swift
+#### Swift
 
 ```
 Spresso.sharedInstance().track(SpressoEventTypeViewPage, properties: ["variantSku": "<variant_sku>",
@@ -59,7 +59,7 @@ Spresso.sharedInstance().track(SpressoEventTypeViewPage, properties: ["variantSk
                                                                               "variantPrice": "<variant_price>"])
 ```
 
-### Objective-C
+#### Objective-C
 
 ```
 [[Spresso sharedInstance] track:SpressoEventTypeViewProduct properties:@{ @"variantSku": @"<variant_sku>",
