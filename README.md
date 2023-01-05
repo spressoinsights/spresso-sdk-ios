@@ -21,14 +21,14 @@ Initialize the library with your current environment and orgId.
 
 ### Swift
 
-```ruby
+```
 Spresso.sharedInstance(for: .prod)
 Spresso.sharedInstance().orgId = <org_id>
 ```
 
 ### Objective-C
 
-```ruby
+```
 [Spresso sharedInstanceForEnvironment:SpressoEnvironmentProd];
 [Spresso sharedInstance].orgId = @"<org_id>";
 ```
@@ -37,13 +37,13 @@ Spresso.sharedInstance().orgId = <org_id>
 
 ### Swift
 
-```ruby
+```
 Spresso.sharedInstance().identify("<user_id>")
 ```
 
 ### Objective-C
 
-```ruby
+```
 [[Spresso sharedInstance] identify:@"<user_id"];
 ```
 
@@ -53,7 +53,7 @@ Example of tracking viewing a product
 
 ### Swift
 
-```ruby
+```
 Spresso.sharedInstance().track(SpressoEventTypeViewPage, properties: ["variantSku": "<variant_sku>",
                                                                               "variantName": "<variant_name>",
                                                                               "variantPrice": "<variant_price>"])
@@ -61,7 +61,7 @@ Spresso.sharedInstance().track(SpressoEventTypeViewPage, properties: ["variantSk
 
 ### Objective-C
 
-```ruby
+```
 [[Spresso sharedInstance] track:SpressoEventTypeViewProduct properties:@{ @"variantSku": @"<variant_sku>",
                                                                               @"variantName": @"<variant_name>",
                                                                               @"variantPrice": @"<variant_price>"
