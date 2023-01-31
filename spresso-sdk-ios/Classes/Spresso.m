@@ -17,7 +17,7 @@
 #import "SPLogger.h"
 #import "SPKeychainItemWrapper.h"
 
-#define VERSION @"0.1.0"
+#define VERSION @"1.1.0"
 #define SPRESSO_FLUSH_INTERVAL 30
 
 
@@ -512,7 +512,6 @@ static Spresso *sharedInstance = nil;
             [p addEntriesFromDictionary:properties];
         }
         NSMutableDictionary *e = [NSMutableDictionary dictionaryWithDictionary:@{@"event": event, @"properties": [NSDictionary dictionaryWithDictionary:p], @"utcTimestampMs" : epochMilliseconds}];
-        [e setValue:VERSION forKey:@"v"];
 //        p[@"event"] = event;
 //        p[@"v"] = VERSION;
 //        p[@"utcTimestampMs"] = epochMilliseconds;
@@ -520,6 +519,8 @@ static Spresso *sharedInstance = nil;
         if (self.deviceId) {
             [e setValue:self.deviceId forKey:@"deviceId"];
         }
+        [e setValue:VERSION forKey:@"version"];
+        [e setValue:@"iOS" forKey:@"platform"];
         [e setValue:[[NSUUID UUID] UUIDString] forKey:@"uid"];
         [e setValue:@([[NSTimeZone systemTimeZone] secondsFromGMT] * 1000) forKey:@"timezoneOffset"];
   
