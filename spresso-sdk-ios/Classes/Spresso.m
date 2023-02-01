@@ -17,7 +17,7 @@
 #import "SPLogger.h"
 #import "SPKeychainItemWrapper.h"
 
-#define VERSION @"1.1.0"
+#define VERSION @"1.1.1"
 #define SPRESSO_FLUSH_INTERVAL 30
 
 
