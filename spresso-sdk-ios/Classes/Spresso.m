@@ -261,6 +261,8 @@ static Spresso *sharedInstance = nil;
     UIDevice *device = [UIDevice currentDevice];
     NSString *deviceModel = [self deviceModel];
 //    [p setValue:@"iphone" forKey:@"mp_lib"];
+    [p setValue:VERSION forKey:@"version"];
+    [p setValue:@"iOS" forKey:@"platform"];
     [p setValue:VERSION forKey:@"libVersion"];
     [p setValue:[[NSBundle mainBundle] infoDictionary][@"CFBundleVersion"] forKey:@"appVersion"];
     [p setValue:[[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"] forKey:@"appRelease"];
@@ -519,8 +521,7 @@ static Spresso *sharedInstance = nil;
         if (self.deviceId) {
             [e setValue:self.deviceId forKey:@"deviceId"];
         }
-        [e setValue:VERSION forKey:@"version"];
-        [e setValue:@"iOS" forKey:@"platform"];
+
         [e setValue:[[NSUUID UUID] UUIDString] forKey:@"uid"];
         [e setValue:@([[NSTimeZone systemTimeZone] secondsFromGMT] * 1000) forKey:@"timezoneOffset"];
   
