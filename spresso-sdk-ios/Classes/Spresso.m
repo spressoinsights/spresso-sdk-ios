@@ -139,6 +139,7 @@ static Spresso *sharedInstance = nil;
         }
 
         self.deviceId = [self defaultDeviceId];
+        self.spressoDeviceId = [self defaultDeviceId];
         self.automaticProperties = [self collectAutomaticProperties];
         self.eventsQueue = [NSMutableArray array];
         self.taskId = UIBackgroundTaskInvalid;
@@ -279,6 +280,7 @@ static Spresso *sharedInstance = nil;
         [p setValue:carrier.carrierName forKey:@"carrier"];
     }
     [p setValue:self.deviceId forKey:@"deviceId"];
+    [p setValue:self.spressoDeviceId forKey:@"spressoDeviceId"];
  
     return p;
 }
@@ -522,6 +524,10 @@ static Spresso *sharedInstance = nil;
             [e setValue:self.deviceId forKey:@"deviceId"];
         }
 
+        if (self.spressoDeviceId) {
+            [e setValue:self.spressoDeviceId forKey:@"spressoDeviceId"];
+        }
+
         [e setValue:[[NSUUID UUID] UUIDString] forKey:@"uid"];
         [e setValue:@([[NSTimeZone systemTimeZone] secondsFromGMT] * 1000) forKey:@"timezoneOffset"];
   
@@ -755,6 +761,7 @@ static Spresso *sharedInstance = nil;
     [p setValue:self.userId forKey:@"userId"];
     [p setValue:self.nameTag forKey:@"nameTag"];
     [p setValue:self.deviceId forKey:@"deviceId"];
+    [p setValue:self.spressoDeviceId forKey:@"spressoDeviceId"];
     [p setValue:self.refUserId forKey:@"refUserId"];
 
 
