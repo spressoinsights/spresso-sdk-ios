@@ -17,7 +17,7 @@
 #import "SPLogger.h"
 #import "SPKeychainItemWrapper.h"
 
-#define VERSION @"1.1.1"
+#define VERSION @"1.2.1"
 #define SPRESSO_FLUSH_INTERVAL 30
 
 
@@ -139,7 +139,6 @@ static Spresso *sharedInstance = nil;
         }
 
         self.deviceId = [self defaultDeviceId];
-        self.spressoDeviceId = [self defaultDeviceId];
         self.automaticProperties = [self collectAutomaticProperties];
         self.eventsQueue = [NSMutableArray array];
         self.taskId = UIBackgroundTaskInvalid;
@@ -280,7 +279,6 @@ static Spresso *sharedInstance = nil;
         [p setValue:carrier.carrierName forKey:@"carrier"];
     }
     [p setValue:self.deviceId forKey:@"deviceId"];
-    [p setValue:self.spressoDeviceId forKey:@"spressoDeviceId"];
  
     return p;
 }
@@ -398,21 +396,15 @@ static Spresso *sharedInstance = nil;
     if (deviceId && deviceId.length > 0) {
         return deviceId;
     }
-    
-    if ((!deviceId || deviceId.length == 0) && NSClassFromString(@"UIDevice")) {
-        deviceId = [[UIDevice currentDevice].identifierForVendor UUIDString];
-    }
-    if (!deviceId || deviceId.length == 0) {
-        deviceId = [[NSUUID UUID] UUIDString];
-    }
+
     if (!deviceId || deviceId.length == 0) {
         deviceId = [self createOwnDeviceId];
     }
-    
+
     if (deviceId) {
         [self storeDeviceIdInKeychain:deviceId];
     }
-    
+
     return deviceId;
 }
 
@@ -522,10 +514,6 @@ static Spresso *sharedInstance = nil;
         
         if (self.deviceId) {
             [e setValue:self.deviceId forKey:@"deviceId"];
-        }
-
-        if (self.spressoDeviceId) {
-            [e setValue:self.spressoDeviceId forKey:@"spressoDeviceId"];
         }
 
         [e setValue:[[NSUUID UUID] UUIDString] forKey:@"uid"];
@@ -761,7 +749,6 @@ static Spresso *sharedInstance = nil;
     [p setValue:self.userId forKey:@"userId"];
     [p setValue:self.nameTag forKey:@"nameTag"];
     [p setValue:self.deviceId forKey:@"deviceId"];
-    [p setValue:self.spressoDeviceId forKey:@"spressoDeviceId"];
     [p setValue:self.refUserId forKey:@"refUserId"];
 
 
