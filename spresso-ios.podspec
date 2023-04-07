@@ -7,9 +7,9 @@
 #
 
 Pod::Spec.new do |s|
-  s.name             = 'spresso-sdk-ios'
+  s.name             = 'spresso-ios'
   s.version          = '1.2.2'
-  s.summary          = 'A short description of spresso-sdk-ios.'
+  s.summary          = 'A short description of spresso-ios.'
 
 # This description is used to generate tags and improve search results.
 #   * Think: What does it do? Why did you write it? What is the focus?
