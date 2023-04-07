@@ -17,7 +17,7 @@
 #import "SPLogger.h"
 #import "SPKeychainItemWrapper.h"
 
-#define VERSION @"1.2.1"
+#define VERSION @"1.2.2"
 #define SPRESSO_FLUSH_INTERVAL 30
 
 
@@ -465,7 +465,7 @@ static Spresso *sharedInstance = nil;
 
 -(NSString*) getDeviceIdFromKeychain {
     
-    SPKeychainItemWrapper* wrapper = [[SPKeychainItemWrapper alloc] initWithIdentifier:@"SpressoDeviceID" accessGroup:@"Spresso"];
+    SPKeychainItemWrapper* wrapper = [[SPKeychainItemWrapper alloc] initWithIdentifier:@"SpressoDeviceID" accessGroup:nil];
     NSString* deviceId = [wrapper objectForKey:(__bridge id)(kSecValueData)];
     
     return deviceId;
