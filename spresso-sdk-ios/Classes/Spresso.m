@@ -17,7 +17,7 @@
 #import "SPLogger.h"
 #import "SPKeychainItemWrapper.h"
 
-#define VERSION @"1.2.2"
+#define VERSION @"1.3.0"
 #define SPRESSO_FLUSH_INTERVAL 30
 
 
@@ -119,17 +119,17 @@ static Spresso *sharedInstance = nil;
             }
             case SpressoEnvironmentProd: {
                 self.apiToken = @"prod";
-                self.serverURL = @"https://public-pensieve-stats.us-east4.prod.spresso.com";
+                self.serverURL = @"https://api.spresso.com/pim/public/events";
                 break;
             }
             case SpressoEnvironmentStaging: {
                 self.apiToken = @"staging_token";
-                self.serverURL = @"https://public-pensieve-stats.us-east4.staging.spresso.com";
+                self.serverURL = @"https://api.staging.spresso.com/pim/public/events";
                 break;
             }
             case SpressoEnvironmentDev: {
                 self.apiToken = @"devtoken";
-                self.serverURL = @"https://public-pensieve-stats.us-east4.staging.spresso.com";
+                self.serverURL = @"https://api.staging.spresso.com/pim/public/events";
                 break;
             }
             default:
@@ -430,9 +430,12 @@ static Spresso *sharedInstance = nil;
         SpressoLog(@"%@ error blank userId id: %@", self, userId);
         return;
     }
+    
+    BOOL inBackground = [Spresso inBackground];
+    
     dispatch_async(self.serialQueue, ^{
         self.userId = userId;
-        if ([Spresso inBackground]) {
+        if (inBackground) {
             [self archiveProperties];
         }
     });
@@ -442,9 +445,12 @@ static Spresso *sharedInstance = nil;
     if (refUserId == nil || refUserId.length == 0) {
         return;
     }
+    
+    BOOL inBackground = [Spresso inBackground];
+    
     dispatch_async(self.serialQueue, ^{
         self.refUserId = refUserId;
-        if ([Spresso inBackground]) {
+        if (inBackground) {
             [self archiveProperties];
         }
     });
@@ -490,6 +496,8 @@ static Spresso *sharedInstance = nil;
     properties = [properties copy];
     [Spresso assertPropertyTypes:properties];
     NSNumber *epochMilliseconds = @(round([[NSDate date] timeIntervalSince1970] * 1000));
+    BOOL inBackground = [Spresso inBackground];
+    
     dispatch_async(self.serialQueue, ^{
         NSMutableDictionary *p = [NSMutableDictionary dictionary];
         [p addEntriesFromDictionary:self.automaticProperties];
@@ -525,7 +533,7 @@ static Spresso *sharedInstance = nil;
         if ([self.eventsQueue count] > 500) {
             [self.eventsQueue removeObjectAtIndex:0];
         }
-        if ([Spresso inBackground]) {
+        if (inBackground) {
             [self archiveEvents];
         }
         
