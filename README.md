@@ -1,9 +1,9 @@
 # spresso-ios-sdk
 
-[![CI Status](https://img.shields.io/travis/Spresso/spresso-sdk-ios.svg?style=flat)](https://travis-ci.org/Spresso/spresso-sdk-ios)
-[![Version](https://img.shields.io/cocoapods/v/spresso-sdk-ios.svg?style=flat)](https://cocoapods.org/pods/spresso-sdk-ios)
-[![License](https://img.shields.io/cocoapods/l/spresso-sdk-ios.svg?style=flat)](https://cocoapods.org/pods/spresso-sdk-ios)
-[![Platform](https://img.shields.io/cocoapods/p/spresso-sdk-ios.svg?style=flat)](https://cocoapods.org/pods/spresso-sdk-ios)
+[![CI Status](https://img.shields.io/travis/Spresso/spresso-ios-sdk.svg?style=flat)](https://travis-ci.org/Spresso/spresso-ios-sdk)
+[![Version](https://img.shields.io/cocoapods/v/spresso-ios-sdk.svg?style=flat)](https://cocoapods.org/pods/spresso-ios-sdk)
+[![License](https://img.shields.io/cocoapods/l/spresso-ios-sdk.svg?style=flat)](https://cocoapods.org/pods/spresso-ios-sdk)
+[![Platform](https://img.shields.io/cocoapods/p/spresso-ios-sdk.svg?style=flat)](https://cocoapods.org/pods/spresso-ios-sdk)
 
 
 ## Installation
