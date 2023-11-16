@@ -1,4 +1,4 @@
-# spresso-sdk-ios
+# spresso-ios-sdk
 
 [![CI Status](https://img.shields.io/travis/Spresso/spresso-sdk-ios.svg?style=flat)](https://travis-ci.org/Spresso/spresso-sdk-ios)
 [![Version](https://img.shields.io/cocoapods/v/spresso-sdk-ios.svg?style=flat)](https://cocoapods.org/pods/spresso-sdk-ios)
@@ -8,11 +8,11 @@
 
 ## Installation
 
-spresso-sdk-ios is available through [CocoaPods](https://cocoapods.org). To install
+spresso-ios-sdk is available through [CocoaPods](https://cocoapods.org). To install
 it, simply add the following line to your Podfile:
 
 ```ruby
-pod 'spresso-sdk-ios'
+pod 'spresso-ios-sdk'
 ```
 
 ## Initialization
@@ -74,4 +74,4 @@ Spresso, developer@spresso.com
 
 ## License
 
-spresso-sdk-ios is available under the MIT license. See the LICENSE file for more info.
+spresso-ios-sdk is available under the MIT license. See the LICENSE file for more info.
