@@ -102,7 +102,7 @@ static Spresso *sharedInstance = nil;
 
     if (self = [self init]) {
 
-        _flushInterval = flushInterval;
+        self.flushInterval = flushInterval;
         self.flushOnBackground = YES;
         self.showNetworkActivityIndicator = YES;
         
@@ -632,7 +632,7 @@ static Spresso *sharedInstance = nil;
 {
     if (!self.sendEnabled) return;
     [self flushQueue:_eventsQueue
-            endpoint:@"/track"];
+            endpoint:@""];
 }
 
 
@@ -653,6 +653,8 @@ static Spresso *sharedInstance = nil;
         
         [self updateNetworkActivityIndicator:YES];
         
+        SpressoDebug(@"request: %@", request.debugDescription);
+        
         NSData *responseData = [NSURLConnection sendSynchronousRequest:request returningResponse:nil error:&error];
         
         [self updateNetworkActivityIndicator:NO];
@@ -663,6 +665,7 @@ static Spresso *sharedInstance = nil;
         }
         
         NSString *response = [[NSString alloc] initWithData:responseData encoding:NSUTF8StringEncoding];
+        SpressoDebug(@"response: %@", response);
 //        if ([response intValue] == 0) {
 //            SpressoDebug(@"%@ %@ api rejected some items", self, endpoint);
 //        };
